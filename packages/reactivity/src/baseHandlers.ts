@@ -110,6 +110,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
     }
 
     if (!isReadonly) {
+      //如果不是只读的 就跟踪依赖
       track(target, TrackOpTypes.GET, key)
     }
 
@@ -132,7 +133,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
     return res
   }
 }
-
+// 响应式对象的ReactiveHandler
 class MutableReactiveHandler extends BaseReactiveHandler {
   constructor(isShallow = false) {
     super(false, isShallow)
@@ -176,8 +177,10 @@ class MutableReactiveHandler extends BaseReactiveHandler {
     // don't trigger if target is something up in the prototype chain of original
     if (target === toRaw(receiver)) {
       if (!hadKey) {
+        //新增属性
         trigger(target, TriggerOpTypes.ADD, key, value)
       } else if (hasChanged(value, oldValue)) {
+        //更新属性值
         trigger(target, TriggerOpTypes.SET, key, value, oldValue)
       }
     }

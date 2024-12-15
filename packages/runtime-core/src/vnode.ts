@@ -387,6 +387,7 @@ export function isVNode(value: any): value is VNode {
   return value ? value.__v_isVNode === true : false
 }
 
+//判断是否为相同VNodeType
 export function isSameVNodeType(n1: VNode, n2: VNode): boolean {
   if (__DEV__ && n2.shapeFlag & ShapeFlags.COMPONENT && n1.component) {
     const dirtyInstances = hmrDirtyComponents.get(n2.type as ConcreteComponent)
@@ -399,6 +400,7 @@ export function isSameVNodeType(n1: VNode, n2: VNode): boolean {
       return false
     }
   }
+  //类型相同且key相同
   return n1.type === n2.type && n1.key === n2.key
 }
 
@@ -461,6 +463,7 @@ function createBaseVNode(
   isBlockNode = false,
   needFullChildrenNormalization = false,
 ): VNode {
+  //VNode对象
   const vnode = {
     __v_isVNode: true,
     __v_skip: true,
@@ -543,6 +546,7 @@ export const createVNode = (
   __DEV__ ? createVNodeWithArgsTransform : _createVNode
 ) as typeof _createVNode
 
+/* 创建虚拟dom */
 function _createVNode(
   type: VNodeTypes | ClassComponent | typeof NULL_DYNAMIC_COMPONENT,
   props: (Data & VNodeProps) | null = null,

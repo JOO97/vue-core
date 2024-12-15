@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app">
+        <div>
+            <h2>Current value:{{value}}</h2>
+            <button @click="decrement">-</button><button @click="increment">+</button>
+        </div>
+
+    </div>
+    <script src="../dist/vue.global.js"></script>
+    <script>
+        const { createApp, ref, watch, watchEffect, nextTick } = Vue
+        const app = createApp({
+            setup(props) {
+                const value = ref(0)
+                const increment = () => {
+                    value.value++
+                    //UI更新在微任务队列中 会等同步代码全部执行完成后才进行
+                    console.log('1====', value.value)
+                    nextTick(() => {
+                        console.log('2====', value.value)
+                    })
+                }
+                const decrement = () => value.value--
+                return {
+                    value,
+                    increment,
+                    decrement
+                }
+            }
+        })
+        app.mount('#app')
+        const name = ref('joo')
+
+        //第一个入参是source，会被转换为getter函数 getter: () => nVal.value
+        watch(name, (nVal, oVal) => {
+            console.log('name changed', nVal, oVal)
+        }, {
+            flush: 'pre'
+        })
+
+        //第一个入参是getter
+        watchEffect(() => {
+            document.querySelector('#app').innerHTML = name.value
+        })
+
+
+        setTimeout(() => {
+            name.value = '111'
+        }, 1000)
+    </script>
+</body>
+
+</html>

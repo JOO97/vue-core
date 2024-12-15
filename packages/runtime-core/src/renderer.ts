@@ -370,6 +370,7 @@ function baseCreateRenderer(
 
   // Note: functions inside this closure should use `const xxx = () => {}`
   // style in order to prevent being inlined by minifiers.
+  //更新虚拟dom
   const patch: PatchFn = (
     n1,
     n2,
@@ -412,7 +413,7 @@ function baseCreateRenderer(
           patchStaticNode(n1, n2, container, namespace)
         }
         break
-      case Fragment:
+      case Fragment: //组件中没有根节点对应就是Fragment
         processFragment(
           n1,
           n2,
@@ -1018,6 +1019,7 @@ function baseCreateRenderer(
     }
   }
 
+  // 针对Fragment的diff
   const processFragment = (
     n1: VNode | null,
     n2: VNode,
@@ -1051,7 +1053,7 @@ function baseCreateRenderer(
         ? slotScopeIds.concat(fragmentSlotScopeIds)
         : fragmentSlotScopeIds
     }
-
+    //无旧的虚拟dom
     if (n1 == null) {
       hostInsert(fragmentStartAnchor, container, anchor)
       hostInsert(fragmentEndAnchor, container, anchor)
@@ -1081,11 +1083,13 @@ function baseCreateRenderer(
         // of renderSlot() with no valid children
         n1.dynamicChildren
       ) {
+        //patchBlockChildren 只会对动态的子节点调用 patch，静态的部分完全不会被处理。
+        //普通的虚拟 DOM 更新中，Vue 会递归对比整个子树
         // a stable fragment (template root or <template v-for>) doesn't need to
         // patch children order, but it may contain dynamicChildren.
         patchBlockChildren(
           n1.dynamicChildren,
-          dynamicChildren,
+          dynamicChildren, //记录了某个块节点下所有需要更新的动态子节点
           container,
           parentComponent,
           parentSuspense,
@@ -1106,6 +1110,7 @@ function baseCreateRenderer(
           traverseStaticChildren(n1, n2, true /* shallow */)
         }
       } else {
+        // patchChildren 处理v-for节点(keyed/unkeyed)
         // keyed / unkeyed, or manual fragments.
         // for keyed & unkeyed, since they are compiler generated from v-for,
         // each child is guaranteed to be a block so the fragment will never
@@ -1119,7 +1124,7 @@ function baseCreateRenderer(
           parentSuspense,
           namespace,
           slotScopeIds,
-          optimized,
+          optimized, //跳过静态内容
         )
       }
     }
@@ -1598,6 +1603,7 @@ function baseCreateRenderer(
     resetTracking()
   }
 
+  //patchChildren 处理v-for节点(keyed/unkeyed)
   const patchChildren: PatchChildrenFn = (
     n1,
     n2,
@@ -1700,6 +1706,8 @@ function baseCreateRenderer(
     }
   }
 
+  //Patch unkeyed children
+  // unKeyed 节点按照顺序对应比对
   const patchUnkeyedChildren = (
     c1: VNode[],
     c2: VNodeArrayChildren,
@@ -1733,6 +1741,7 @@ function baseCreateRenderer(
         optimized,
       )
     }
+    //旧节点的长度大于新节点,则unmount多余节点;反之, 则直接mount新节点
     if (oldLength > newLength) {
       // remove old
       unmountChildren(
@@ -1759,6 +1768,7 @@ function baseCreateRenderer(
     }
   }
 
+  // Patch keyed children
   // can be all-keyed or mixed
   const patchKeyedChildren = (
     c1: VNode[],
@@ -1771,12 +1781,12 @@ function baseCreateRenderer(
     slotScopeIds: string[] | null,
     optimized: boolean,
   ) => {
-    let i = 0
+    let i = 0 //定义索引
     const l2 = c2.length
-    let e1 = c1.length - 1 // prev ending index
-    let e2 = l2 - 1 // next ending index
+    let e1 = c1.length - 1 // prev ending index e1尾部索引
+    let e2 = l2 - 1 // next ending index e2尾部索引
 
-    // 1. sync from start
+    // 1. sync from start 从头部开始比较,对比到不同时就break
     // (a b) c
     // (a b) d e
     while (i <= e1 && i <= e2) {
@@ -1784,6 +1794,7 @@ function baseCreateRenderer(
       const n2 = (c2[i] = optimized
         ? cloneIfMounted(c2[i] as VNode)
         : normalizeVNode(c2[i]))
+      //对比类型和key是否相同
       if (isSameVNodeType(n1, n2)) {
         patch(
           n1,
@@ -1802,7 +1813,7 @@ function baseCreateRenderer(
       i++
     }
 
-    // 2. sync from end
+    // 2. sync from end 从尾部开始比较,对比到不同时就break
     // a (b c)
     // d e (b c)
     while (i <= e1 && i <= e2) {
@@ -1829,7 +1840,7 @@ function baseCreateRenderer(
       e2--
     }
 
-    // 3. common sequence + mount
+    // 3. common sequence + mount 公共序列匹配 + 挂载新节点
     // (a b)
     // (a b) c
     // i = 2, e1 = 1, e2 = 2
@@ -1859,7 +1870,7 @@ function baseCreateRenderer(
       }
     }
 
-    // 4. common sequence + unmount
+    // 4. common sequence + unmount 公共序列匹配 + 卸载新节点
     // (a b) c
     // (a b)
     // i = 2, e1 = 2, e2 = 1
@@ -1873,7 +1884,8 @@ function baseCreateRenderer(
       }
     }
 
-    // 5. unknown sequence
+    // 5. unknown sequence 中间插入的情况
+    // 涉及最小编辑距离算法（LIS, Longest Increasing Subsequence） 和 DOM 操作优化
     // [i ... e1 + 1]: a b [c d e] f g
     // [i ... e2 + 1]: a b [e d c h] f g
     // i = 2, e1 = 4, e2 = 5
@@ -1881,7 +1893,10 @@ function baseCreateRenderer(
       const s1 = i // prev starting index
       const s2 = i // next starting index
 
-      // 5.1 build key:index map for newChildren
+      // e1 = ['a','b','c','d','e','f','g']
+      // e2 = ['a','b', 'd','e','c','h', f','g']
+      // keyToNewIndexMap = { d: 2, e: 3, c: 4, h: 5 }
+      // 5.1 build key:index map for newChildren 为新节点创建映射
       const keyToNewIndexMap: Map<PropertyKey, number> = new Map()
       for (i = s2; i <= e2; i++) {
         const nextChild = (c2[i] = optimized
@@ -1901,9 +1916,11 @@ function baseCreateRenderer(
 
       // 5.2 loop through old children left to be patched and try to patch
       // matching nodes & remove nodes that are no longer present
+      // keyToNewIndexMap = { d: 2, e: 3, c: 4, h: 5 }
+      // newIndexToOldIndexMap = [4, 5, 3, 0] 要更新节点对应在oldMap中的位置
       let j
       let patched = 0
-      const toBePatched = e2 - s2 + 1
+      const toBePatched = e2 - s2 + 1 //将要更新节点的数量
       let moved = false
       // used to track whether any node has moved
       let maxNewIndexSoFar = 0
@@ -1963,6 +1980,7 @@ function baseCreateRenderer(
 
       // 5.3 move and mount
       // generate longest stable subsequence only when nodes have moved
+      // 最长递增子序列
       const increasingNewIndexSequence = moved
         ? getSequence(newIndexToOldIndexMap)
         : EMPTY_ARR
@@ -1973,6 +1991,7 @@ function baseCreateRenderer(
         const nextChild = c2[nextIndex] as VNode
         const anchor =
           nextIndex + 1 < l2 ? (c2[nextIndex + 1] as VNode).el : parentAnchor
+        //新增节点直接挂载
         if (newIndexToOldIndexMap[i] === 0) {
           // mount new
           patch(
@@ -2351,12 +2370,18 @@ function baseCreateRenderer(
   }
 
   let isFlushing = false
+  /**
+   * render函数
+   * 它负责处理视图的更新和卸载，同时确保在渲染时正确管理副作用回调。
+   */
   const render: RootRenderFunction = (vnode, container, namespace) => {
+    //卸载虚拟dom
     if (vnode == null) {
       if (container._vnode) {
         unmount(container._vnode, null, null, true)
       }
     } else {
+      //更新虚拟 DOM
       patch(
         container._vnode || null,
         vnode,
@@ -2368,10 +2393,12 @@ function baseCreateRenderer(
       )
     }
     container._vnode = vnode
+    //刷新队列
+    //在渲染后处理队列中的回调（例如，更新时需要执行的副作用或异步操作）。
     if (!isFlushing) {
       isFlushing = true
-      flushPreFlushCbs()
-      flushPostFlushCbs()
+      flushPreFlushCbs() //在渲染前执行
+      flushPostFlushCbs() //在渲染后执行
       isFlushing = false
     }
   }
@@ -2396,7 +2423,7 @@ function baseCreateRenderer(
       internals as RendererInternals<Node, Element>,
     )
   }
-
+  // 返回渲染器实例对象
   return {
     render,
     hydrate,

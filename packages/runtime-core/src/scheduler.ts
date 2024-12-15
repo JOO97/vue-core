@@ -90,7 +90,7 @@ function findInsertionIndex(id: number) {
 
   return start
 }
-
+// queueJob
 export function queueJob(job: SchedulerJob): void {
   if (!(job.flags! & SchedulerJobFlags.QUEUED)) {
     const jobId = getId(job)
@@ -100,19 +100,23 @@ export function queueJob(job: SchedulerJob): void {
       // fast path when the job id is larger than the tail
       (!(job.flags! & SchedulerJobFlags.PRE) && jobId >= getId(lastJob))
     ) {
+      //添加任务
       queue.push(job)
     } else {
+      //对于已经存在的job，使用二分查找，找到后插入 （二分查找）
       queue.splice(findInsertionIndex(jobId), 0, job)
     }
 
     job.flags! |= SchedulerJobFlags.QUEUED
 
+    //触发任务执行流程
     queueFlush()
   }
 }
 
 function queueFlush() {
   if (!currentFlushPromise) {
+    //放入微任务队列中
     currentFlushPromise = resolvedPromise.then(flushJobs)
   }
 }
@@ -134,6 +138,7 @@ export function queuePostFlushCb(cb: SchedulerJobs): void {
   queueFlush()
 }
 
+//flushPreFlushCbs
 export function flushPreFlushCbs(
   instance?: ComponentInternalInstance,
   seen?: CountMap,
@@ -165,6 +170,7 @@ export function flushPreFlushCbs(
   }
 }
 
+//flushPostFlushCbs
 export function flushPostFlushCbs(seen?: CountMap): void {
   if (pendingPostFlushCbs.length) {
     const deduped = [...new Set(pendingPostFlushCbs)].sort(
@@ -206,6 +212,7 @@ export function flushPostFlushCbs(seen?: CountMap): void {
 const getId = (job: SchedulerJob): number =>
   job.id == null ? (job.flags! & SchedulerJobFlags.PRE ? -1 : Infinity) : job.id
 
+//flushJobs开始执行任务
 function flushJobs(seen?: CountMap) {
   if (__DEV__) {
     seen = seen || new Map()
@@ -230,6 +237,7 @@ function flushJobs(seen?: CountMap) {
         if (job.flags! & SchedulerJobFlags.ALLOW_RECURSE) {
           job.flags! &= ~SchedulerJobFlags.QUEUED
         }
+        //执行job
         callWithErrorHandling(
           job,
           job.i,
@@ -252,6 +260,7 @@ function flushJobs(seen?: CountMap) {
     flushIndex = -1
     queue.length = 0
 
+    //flushPostFlushCbs
     flushPostFlushCbs(seen)
 
     currentFlushPromise = null

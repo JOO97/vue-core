@@ -62,7 +62,10 @@ declare module '@vue/runtime-core' {
     VSlot: Directive
   }
 }
-
+/**
+ * [/*@__PURE__*]/ 是一个注释标记，通常用于提示 JavaScript 编译器（例如 Terser）这一行代码是“纯净”的,它不依赖于外部状态，并且不会产生副作用
+ * 这个标记的作用是告诉编译器，可以安全地对这段代码进行树摇（Tree Shaking），即在构建过程中移除未使用的代码，优化最终的代码体积。
+ */
 const rendererOptions = /*@__PURE__*/ extend({ patchProp }, nodeOps)
 
 // lazy create the renderer - this makes core renderer logic tree-shakable
@@ -72,6 +75,7 @@ let renderer: Renderer<Element | ShadowRoot> | HydrationRenderer
 let enabledHydration = false
 
 function ensureRenderer() {
+  //单例模式 创建渲染器
   return (
     renderer ||
     (renderer = createRenderer<Node, Element | ShadowRoot>(rendererOptions))
@@ -95,7 +99,16 @@ export const hydrate = ((...args) => {
   ensureHydrationRenderer().hydrate(...args)
 }) as RootHydrateFunction
 
+/**
+ * createApp
+ */
 export const createApp = ((...args) => {
+  // ensureRenderer()实例化一个渲染器
+  // {
+  //   render,
+  //   hydrate,
+  //   createApp: createAppAPI(render, hydrate),
+  // }
   const app = ensureRenderer().createApp(...args)
 
   if (__DEV__) {
@@ -103,8 +116,11 @@ export const createApp = ((...args) => {
     injectCompilerOptionsCheck(app)
   }
 
+  //重写mount
+  //装饰者模式 不改变原有的实现，对mount进行了增强
   const { mount } = app
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
+    // 标准化container
     const container = normalizeContainer(containerOrSelector)
     if (!container) return
 

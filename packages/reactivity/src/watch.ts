@@ -179,6 +179,7 @@ export function watch(
         : (source as () => any)
     } else {
       // no cb -> simple effect
+      // watchEffect
       getter = () => {
         if (cleanup) {
           pauseTracking()

@@ -62,6 +62,7 @@ export function getBaseTransformPreset(
 
 // we name it `baseCompile` so that higher order compilers like
 // @vue/compiler-dom can export `compile` while re-exporting everything else.
+// baseCompile
 export function baseCompile(
   source: string | RootNode,
   options: CompilerOptions = {},
@@ -90,6 +91,7 @@ export function baseCompile(
   const resolvedOptions = extend({}, options, {
     prefixIdentifiers,
   })
+  //1 parse 如果是字符串 转化为ast tree
   const ast = isString(source) ? baseParse(source, resolvedOptions) : source
   const [nodeTransforms, directiveTransforms] =
     getBaseTransformPreset(prefixIdentifiers)
@@ -101,6 +103,7 @@ export function baseCompile(
     }
   }
 
+  //2 transform ast转换
   transform(
     ast,
     extend({}, resolvedOptions, {
@@ -116,5 +119,6 @@ export function baseCompile(
     }),
   )
 
+  //3 generate 生成代码 ast转为目标代码字符串
   return generate(ast, resolvedOptions)
 }

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script src="../dist/reactivity.global.js"></script>
+    <script>
+        const { reactive, effect, ref, computed } = VueReactivity
+        //内部创建Proxy代理
+        //set-查找并触发对应的依赖
+        const data = reactive({
+            name: 'joo',
+            age: 27
+        })
+        //count是RefImpl的实例
+        const count = ref(0)
+        const el = document.querySelector('#app')
+
+        //computed
+        const firstName = ref('jm')
+        const lastName = ref('z')
+        const fullName = computed(() => {
+            return firstName.value + ' ' + lastName.value
+        })
+
+        //注册依赖+触发更新
+        effect(() => {
+            // el.innerHTML = data.age
+            // el.innerHTML = count.value
+            // el.innerHTML = fullName.value
+        })
+
+        setInterval(() => {
+            // data.age--
+            firstName.value = '111'
+        }, 1000)
+
+
+    </script>
+</body>
+
+</html>

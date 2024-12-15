@@ -83,6 +83,7 @@ export interface Subscriber extends DebuggerOptions {
 
 const pausedQueueEffects = new WeakSet<ReactiveEffect>()
 
+//ReactiveEffect
 export class ReactiveEffect<T = any>
   implements Subscriber, ReactiveEffectOptions
 {
@@ -400,6 +401,7 @@ export function refreshComputed(computed: ComputedRefImpl): undefined {
 
   try {
     prepareDeps(computed)
+    //执行computed的fn
     const value = computed.fn(computed._value)
     if (dep.version === 0 || hasChanged(value, computed._value)) {
       computed._value = value
@@ -473,6 +475,7 @@ export interface ReactiveEffectRunner<T = any> {
   effect: ReactiveEffect
 }
 
+//effect实现
 export function effect<T = any>(
   fn: () => T,
   options?: ReactiveEffectOptions,
@@ -481,6 +484,7 @@ export function effect<T = any>(
     fn = (fn as ReactiveEffectRunner).effect.fn
   }
 
+  //创建ReactiveEffect
   const e = new ReactiveEffect(fn)
   if (options) {
     extend(e, options)

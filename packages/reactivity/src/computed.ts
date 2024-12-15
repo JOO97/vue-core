@@ -44,6 +44,7 @@ export interface WritableComputedOptions<T, S = T> {
  * @private exported by @vue/reactivity for Vue core use, but not exported from
  * the main vue package
  */
+// ComputedRefImpl
 export class ComputedRefImpl<T = any> implements Subscriber {
   /**
    * @internal
@@ -128,6 +129,7 @@ export class ComputedRefImpl<T = any> implements Subscriber {
     }
   }
 
+  //computed 收集依赖
   get value(): T {
     const link = __DEV__
       ? this.dep.track({
@@ -143,7 +145,7 @@ export class ComputedRefImpl<T = any> implements Subscriber {
     }
     return this._value
   }
-
+  //computed 执行依赖
   set value(newValue) {
     if (this.setter) {
       this.setter(newValue)
@@ -186,6 +188,7 @@ export class ComputedRefImpl<T = any> implements Subscriber {
  * @param debugOptions - For debugging. See {@link https://vuejs.org/guide/extras/reactivity-in-depth.html#computed-debugging}.
  * @see {@link https://vuejs.org/api/reactivity-core.html#computed}
  */
+//computed
 export function computed<T>(
   getter: ComputedGetter<T>,
   debugOptions?: DebuggerOptions,

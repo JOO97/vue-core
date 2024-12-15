@@ -89,6 +89,7 @@ export type Reactive<T> = UnwrapNestedRefs<T> &
  * @see {@link https://vuejs.org/api/reactivity-core.html#reactive}
  */
 export function reactive<T extends object>(target: T): Reactive<T>
+//reactive实现
 export function reactive(target: object) {
   // if trying to observe a readonly proxy, return the readonly version.
   if (isReadonly(target)) {
@@ -254,6 +255,7 @@ export function shallowReadonly<T extends object>(target: T): Readonly<T> {
   )
 }
 
+//创建react对象
 function createReactiveObject(
   target: Target,
   isReadonly: boolean,
@@ -289,8 +291,10 @@ function createReactiveObject(
   if (targetType === TargetType.INVALID) {
     return target
   }
+  //创建Proxy
   const proxy = new Proxy(
     target,
+    // COLLECTION: Map/Set/WeakMap/WeakSet
     targetType === TargetType.COLLECTION ? collectionHandlers : baseHandlers,
   )
   proxyMap.set(target, proxy)

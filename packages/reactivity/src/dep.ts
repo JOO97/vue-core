@@ -64,6 +64,7 @@ export class Link {
 /**
  * @internal
  */
+//Dep class
 export class Dep {
   version = 0
   /**
@@ -285,6 +286,7 @@ export function track(target: object, type: TrackOpTypes, key: unknown): void {
  * @param type - Defines the type of the operation that needs to trigger effects.
  * @param key - Can be used to target a specific reactive property in the target object.
  */
+//查找依赖并触发响更新
 export function trigger(
   target: object,
   type: TriggerOpTypes,
@@ -293,6 +295,7 @@ export function trigger(
   oldValue?: unknown,
   oldTarget?: Map<unknown, unknown> | Set<unknown>,
 ): void {
+  //获取对应的依赖
   const depsMap = targetMap.get(target)
   if (!depsMap) {
     // never been tracked

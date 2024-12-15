@@ -76,6 +76,7 @@ export interface KeepAliveContext extends ComponentRenderContext {
 export const isKeepAlive = (vnode: VNode): boolean =>
   (vnode.type as any).__isKeepAlive
 
+// keep-alive
 const KeepAliveImpl: ComponentOptions = {
   name: `KeepAlive`,
 
@@ -108,6 +109,7 @@ const KeepAliveImpl: ComponentOptions = {
       }
     }
 
+    //缓存VNode
     const cache: Cache = new Map()
     const keys: Keys = new Set()
     let current: VNode | null = null
@@ -128,6 +130,7 @@ const KeepAliveImpl: ComponentOptions = {
     } = sharedContext
     const storageContainer = createElement('div')
 
+    //activate
     sharedContext.activate = (
       vnode,
       container,
@@ -136,6 +139,7 @@ const KeepAliveImpl: ComponentOptions = {
       optimized,
     ) => {
       const instance = vnode.component!
+      // VNode移到container
       move(vnode, container, anchor, MoveType.ENTER, parentSuspense)
       // in case props have changed
       patch(
@@ -166,11 +170,14 @@ const KeepAliveImpl: ComponentOptions = {
       }
     }
 
+    //deactivate
     sharedContext.deactivate = (vnode: VNode) => {
       const instance = vnode.component!
+      //失效mount和activate
       invalidateMount(instance.m)
       invalidateMount(instance.a)
 
+      //将deactivate组件放到storageContainer
       move(vnode, storageContainer, null, MoveType.LEAVE, parentSuspense)
       queuePostRenderEffect(() => {
         if (instance.da) {
@@ -230,6 +237,7 @@ const KeepAliveImpl: ComponentOptions = {
 
     // cache sub tree after render
     let pendingCacheKey: CacheKey | null = null
+    //cacheSubtree缓存子组件
     const cacheSubtree = () => {
       // fix #1621, the pendingCacheKey could be 0
       if (pendingCacheKey != null) {
@@ -263,6 +271,7 @@ const KeepAliveImpl: ComponentOptions = {
       })
     })
 
+    // keep-alive的render函数
     return () => {
       pendingCacheKey = null
 

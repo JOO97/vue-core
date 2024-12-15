@@ -95,6 +95,7 @@ export function shallowRef(value?: unknown) {
   return createRef(value, true)
 }
 
+// ref
 function createRef(rawValue: unknown, shallow: boolean) {
   if (isRef(rawValue)) {
     return rawValue
@@ -105,6 +106,7 @@ function createRef(rawValue: unknown, shallow: boolean) {
 /**
  * @internal
  */
+//RefImpl ref的实现
 class RefImpl<T = any> {
   _value: T
   private _rawValue: T
@@ -116,6 +118,7 @@ class RefImpl<T = any> {
 
   constructor(value: T, isShallow: boolean) {
     this._rawValue = isShallow ? value : toRaw(value)
+    //value如果是对象的话 创建的是reactive
     this._value = isShallow ? value : toReactive(value)
     this[ReactiveFlags.IS_SHALLOW] = isShallow
   }

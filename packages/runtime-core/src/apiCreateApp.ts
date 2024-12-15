@@ -252,6 +252,7 @@ export function createAppAPI<HostElement>(
   render: RootRenderFunction<HostElement>,
   hydrate?: RootHydrateFunction,
 ): CreateAppFunction<HostElement> {
+  // createApp 实现
   return function createApp(rootComponent, rootProps = null) {
     if (!isFunction(rootComponent)) {
       rootComponent = extend({}, rootComponent)
@@ -262,12 +263,14 @@ export function createAppAPI<HostElement>(
       rootProps = null
     }
 
+    //创建app上下文
     const context = createAppContext()
     const installedPlugins = new WeakSet()
     const pluginCleanupFns: Array<() => any> = []
 
     let isMounted = false
 
+    // app对象
     const app: App = (context.app = {
       _uid: uid++,
       _component: rootComponent as ConcreteComponent,
@@ -290,6 +293,7 @@ export function createAppAPI<HostElement>(
         }
       },
 
+      // 安装vue插件
       use(plugin: Plugin, ...options: any[]) {
         if (installedPlugins.has(plugin)) {
           __DEV__ && warn(`Plugin has already been applied to target app.`)
@@ -308,6 +312,7 @@ export function createAppAPI<HostElement>(
         return app
       },
 
+      //混入
       mixin(mixin: ComponentOptions) {
         if (__FEATURE_OPTIONS_API__) {
           if (!context.mixins.includes(mixin)) {
@@ -353,6 +358,7 @@ export function createAppAPI<HostElement>(
         return app
       },
 
+      //挂载
       mount(
         rootContainer: HostElement,
         isHydrate?: boolean,
@@ -367,6 +373,7 @@ export function createAppAPI<HostElement>(
                 ` you need to unmount the previous app by calling \`app.unmount()\` first.`,
             )
           }
+          // 创建VNode
           const vnode = app._ceVNode || createVNode(rootComponent, rootProps)
           // store app context on the root VNode.
           // this will be set on the root instance on initial mount.
@@ -390,10 +397,11 @@ export function createAppAPI<HostElement>(
               )
             }
           }
-
+          //SSR环境
           if (isHydrate && hydrate) {
             hydrate(vnode as VNode<Node, Element>, rootContainer as any)
           } else {
+            //非SSR环境 的渲染
             render(vnode, rootContainer, namespace)
           }
           isMounted = true
